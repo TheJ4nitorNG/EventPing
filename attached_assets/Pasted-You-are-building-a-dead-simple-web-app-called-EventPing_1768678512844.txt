@@ -1,0 +1,70 @@
+You are building a dead-simple web app called “EventPing” (working name). It creates a shareable link for an event, and anyone with the link can vote: Yes / No / Maybe. No chat, no profiles, no feeds. Keep it minimal, fast, mobile-first.
+
+GOAL (MVP):
+- Create an event (title + date/time required; optional location + note).
+- Generate a shareable public URL like /e/:eventId.
+- On the public event page, show event details + three buttons: Yes / No / Maybe.
+- When someone votes, save their choice with an optional name (default “Anonymous”) and optional short comment (<= 140 chars).
+- Show a simple results summary: counts of Yes/No/Maybe + list of responses.
+- Provide an “Organizer view” link after creating an event that shows the same results dashboard (can be a secret token URL, no login required for MVP).
+- Lock the event automatically once the event start time has passed (no more votes, display “Voting closed”).
+
+TECH CHOICES:
+- Use Next.js (App Router) + TypeScript.
+- Use TailwindCSS for styling (minimal dark mode default is fine).
+- Use Supabase for database + API (Postgres). Use anon access with Row Level Security configured safely.
+- Do NOT add any extra features (no accounts required, no calendars integration, no notifications, no chat).
+
+DATABASE:
+Create two tables:
+1) events:
+- id uuid primary key default gen_random_uuid()
+- title text not null
+- starts_at timestamptz not null
+- location text null
+- note text null
+- created_at timestamptz default now()
+- organizer_token text not null (random secret string)
+2) responses:
+- id uuid primary key default gen_random_uuid()
+- event_id uuid references events(id) on delete cascade
+- name text null
+- choice text not null check (choice in ('yes','no','maybe'))
+- comment text null
+- created_at timestamptz default now()
+
+RLS POLICIES (IMPORTANT):
+- events: allow SELECT for everyone (public events) but only allow INSERT from server-side routes; no public UPDATE/DELETE.
+- responses: allow SELECT for everyone; allow INSERT for everyone but only if event exists AND starts_at is in the future; no UPDATE/DELETE publicly.
+If Supabase policy limitations make starts_at checking hard, enforce that check in the server route before inserting and keep policies conservative (e.g., only allow inserts via server using service role key).
+
+PAGES / ROUTES:
+- / (home): button “Create Event” and list nothing else.
+- /create: form -> POST to /api/events -> returns eventId and organizer token. After creation show:
+  - Public link: /e/:eventId
+  - Organizer link: /o/:eventId?token=ORGANIZER_TOKEN
+- /e/:eventId: public event page + voting UI + results.
+- /o/:eventId: organizer dashboard (requires correct token query param). Show results + response list.
+
+API ROUTES:
+- POST /api/events: validate input; create event with organizer_token; return eventId + organizer_token.
+- POST /api/events/:id/vote: validate choice/name/comment; reject if starts_at <= now; insert response.
+- GET /api/events/:id: return event details + aggregated counts + responses.
+- GET /api/events/:id/organizer?token=...: verify token matches; return same data.
+
+UI:
+- Minimal card layout.
+- Big Yes/No/Maybe buttons.
+- After voting, show “Thanks—recorded” and update counts.
+- If voting closed, disable buttons and show closed message.
+
+DELIVERABLES:
+- Generate the full Next.js project structure.
+- Provide setup steps in README:
+  - Supabase project creation
+  - SQL migration for tables
+  - RLS policies (SQL)
+  - Environment variables (SUPABASE_URL, SUPABASE_ANON_KEY, and if needed SUPABASE_SERVICE_ROLE_KEY used ONLY in server routes).
+- Ensure it runs on Replit with `npm run dev`.
+
+Start by scaffolding the project, then create the Supabase schema + policies SQL, then implement the pages and API routes, then styling, then final testing notes.
