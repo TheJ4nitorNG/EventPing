@@ -19,11 +19,8 @@ export async function checkAndSendReminders() {
   todayEnd.setHours(23, 59, 59, 999);
 
   try {
-    const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-      ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-      : process.env.REPLIT_DEPLOYMENT_URL 
-      ? `https://${process.env.REPLIT_DEPLOYMENT_URL}`
-      : 'http://localhost:5000';
+    // Use the PUBLIC_URL env var, fallback to localhost for local testing
+    const baseUrl = process.env.PUBLIC_URL || 'http://localhost:5000';
 
     // ===== ORGANIZER REMINDERS =====
     
