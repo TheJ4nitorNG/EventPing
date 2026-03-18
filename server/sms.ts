@@ -1,50 +1,24 @@
 import twilio from 'twilio';
 
-// Twilio integration - connection:conn_twilio_01KG7N8ZQ533FRN4V1NPWYNSDS
-let connectionSettings: any;
-
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=twilio',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  if (!connectionSettings || (!connectionSettings.settings.account_sid || !connectionSettings.settings.api_key || !connectionSettings.settings.api_key_secret)) {
-    throw new Error('Twilio not connected');
-  }
-  return {
-    accountSid: connectionSettings.settings.account_sid,
-    apiKey: connectionSettings.settings.api_key,
-    apiKeySecret: connectionSettings.settings.api_key_secret,
-    phoneNumber: connectionSettings.settings.phone_number
-  };
-}
-
 export async function getTwilioClient() {
-  const { accountSid, apiKey, apiKeySecret } = await getCredentials();
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const apiKey = process.env.TWILIO_API_KEY;
+  const apiKeySecret = process.env.TWILIO_API_KEY_SECRET;
+
+  if (!accountSid || !apiKey || !apiKeySecret) {
+    throw new Error('Twilio credentials are missing in environment variables');
+  }
+
   return twilio(apiKey, apiKeySecret, {
     accountSid: accountSid
   });
 }
 
 export async function getTwilioFromPhoneNumber() {
-  const { phoneNumber } = await getCredentials();
+  const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
+  if (!phoneNumber) {
+    throw new Error('TWILIO_PHONE_NUMBER environment variable is missing');
+  }
   return phoneNumber;
 }
 
