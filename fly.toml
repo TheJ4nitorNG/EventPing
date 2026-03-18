@@ -21,3 +21,6 @@ primary_region = 'yyz'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 2048
+
+[deploy]
+  release_command = "npm run db:push"
